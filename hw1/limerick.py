@@ -170,8 +170,6 @@ class LimerickDetector:
         for j in range(len(lines)):
           i_terminal_word = word_tokenize(lines[i])[-1]
           j_terminal_word = word_tokenize(lines[j])[-1]
-          print "i_terminal_word: ", i_terminal_word
-          print "j_terminal_word: ", j_terminal_word
           do_rhyme = do_rhyme and self.rhymes(i_terminal_word, j_terminal_word)
       return do_rhyme
     
@@ -209,37 +207,28 @@ class LimerickDetector:
         """
         # Check if the text should be considered as a limerick to begin with
         a_lines, b_lines = self._get_lines(text)
-        print "DEBUG POINT 1"
-        print "a lines: ", a_lines , len(a_lines)
-        print "b lines: ", b_lines, len(b_lines)
         if (len(a_lines) + len(b_lines) != 5): return False
-        print "DEBUG POINT 2"
         if not (len(a_lines) == 3 and len(b_lines) == 2): return False
 
         # check line-level syllable count
         a_num_syllables = [self._line_num_syllables(line) for line in a_lines]
         b_num_syllables = [self._line_num_syllables(line) for line in b_lines]
-        print "DEBUG POINT 3"
-        print "a_num_syllables: ", a_lines, a_num_syllables
-        print "b_num_syllables: ", b_lines, b_num_syllables
         if sum(a_num_syllables) < 4 or sum(b_num_syllables) < 4: return False
-        print "DEBUG POINT 4"
+
         # check inter-line level syllable count difference
         if not self._is_valid_diff(a_num_syllables, b_num_syllables): return False
-        print "DEBUG POINT 5"
+  
         # All A lines must rhyme with each other
         if not self._lines_do_rhyme(a_lines): return False 
-        print "DEBUG POINT 6"
+        
         # All B lines must rhyme with each other
         if not self._lines_do_rhyme(b_lines): return False 
-        print "DEBUG POINT 7"
+       
         # A lines and B lines must not rhyme with each other 
         a_lines.extend(b_lines)
-        # print "combined lines: ", a_lines
         if self._lines_do_rhyme(a_lines): return False 
-        print "DEBUG POINT 8"
+        
         # All constraints have been addressed; assume the text is a limerick
-        print "Returning: ", True
         return True 
 
 
