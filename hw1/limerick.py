@@ -13,8 +13,6 @@ import gzip
 import tempfile
 import shutil
 import atexit
-import re
-import random
 # Use word_tokenize to split raw text into words
 from string import punctuation
 
@@ -130,13 +128,16 @@ class LimerickDetector:
       Split the text into A lines and B lines and return the resulting lists as tuple.
       """
       lines = text.split('\n')
+      lines = [line for line in lines if line.strip()] # ignore any empty lines
       a_lines = []
       b_lines = []
       for index, line in enumerate(lines):
-        if index in [0, 1, 3]:
+        if index in [0, 1, 4]:
           a_lines.append(line)
         else:
           b_lines.append(line)
+      a_lines =[self._remove_punctuations(line) for line in a_lines]
+      b_lines =[self._remove_punctuations(line) for line in b_lines]
       return a_lines, b_lines
 
     def _is_valid_diff(self, a_num_syllables, b_num_syllables):
@@ -157,20 +158,34 @@ class LimerickDetector:
       for i in range(len(a_num_syllables)):
         for j in range(len(b_num_syllables)):
            if a_num_syllables[i] - b_num_syllables[j] <= 0: return False
+      return True
       
 
-     def _lines_do_rhyme(self, lines):
-       """
-       Return True if all the lines rhyme with each other. Return False otherwise.
-       """
-        do_rhyme = True
-        for i in range(len(lines)):
-          for j in range(len(lines)):
-            i_terminal_word = word_tokenize(lines[i])[-1]
-            j_terminal_word = word_tokenize(lines[j])[-1]
-            do_rhyme = do_rhyme and self.rhyme(i_terminal_word, j_terminal_word)
-        return do_rhyme
+    def _lines_do_rhyme(self, lines):
+      """
+      Return True if all the lines rhyme with each other. Return False otherwise.
+      """
+      do_rhyme = True
+      for i in range(len(lines)):
+        for j in range(len(lines)):
+          i_terminal_word = word_tokenize(lines[i])[-1]
+          j_terminal_word = word_tokenize(lines[j])[-1]
+          print "i_terminal_word: ", i_terminal_word
+          print "j_terminal_word: ", j_terminal_word
+          do_rhyme = do_rhyme and self.rhymes(i_terminal_word, j_terminal_word)
+      return do_rhyme
+    
+    def _line_num_syllables(self, line):
+      """
+      Return the number of syllables in line.
+      """
+      return sum([self.num_syllables(word) for word in word_tokenize(line)])
 
+    def _remove_punctuations(self, raw):
+      """
+      Remove punctuations from raw text.
+      """
+      return raw.translate(None, punctuation)
 
 
     def is_limerick(self, text):
@@ -184,43 +199,50 @@ class LimerickDetector:
 
 
         Additionally, the following syllable constraints should be observed:
-          ✓ * No two A lines should differ in their number of syllables by more than two.
-          ✓ * The B lines should differ in their number of syllables by no more than two.
-          ✓ * Each of the B lines should have fewer syllables than each of the A lines.
-          ✓ * No line should have fewer than 4 syllables
+          DONE * No two A lines should differ in their number of syllables by more than two.
+          DONE * The B lines should differ in their number of syllables by no more than two.
+          DONE * Each of the B lines should have fewer syllables than each of the A lines.
+          DONE * No line should have fewer than 4 syllables
 
         (English professors may disagree with this definition, but that's what
         we're using here.)
         """
         # Check if the text should be considered as a limerick to begin with
         a_lines, b_lines = self._get_lines(text)
-        if (len(a_lines) + len(b_lines) > 5): return False
-        if (len(a_lines) != 3 and len(b_lines) != 2): return False
+        print "DEBUG POINT 1"
+        print "a lines: ", a_lines , len(a_lines)
+        print "b lines: ", b_lines, len(b_lines)
+        if (len(a_lines) + len(b_lines) != 5): return False
+        print "DEBUG POINT 2"
+        if not (len(a_lines) == 3 and len(b_lines) == 2): return False
 
         # check line-level syllable count
-        a_num_syllables = [self.num_syllables(word) for word in a_lines]
-        b_num_syllables = [self.num_syllables(word) for word in b_lines]
+        a_num_syllables = [self._line_num_syllables(line) for line in a_lines]
+        b_num_syllables = [self._line_num_syllables(line) for line in b_lines]
+        print "DEBUG POINT 3"
+        print "a_num_syllables: ", a_lines, a_num_syllables
+        print "b_num_syllables: ", b_lines, b_num_syllables
         if sum(a_num_syllables) < 4 or sum(b_num_syllables) < 4: return False
-
+        print "DEBUG POINT 4"
         # check inter-line level syllable count difference
         if not self._is_valid_diff(a_num_syllables, b_num_syllables): return False
-
+        print "DEBUG POINT 5"
         # All A lines must rhyme with each other
         if not self._lines_do_rhyme(a_lines): return False 
-
+        print "DEBUG POINT 6"
         # All B lines must rhyme with each other
         if not self._lines_do_rhyme(b_lines): return False 
-
+        print "DEBUG POINT 7"
         # A lines and B lines must not rhyme with each other 
-        random.shuffle(a_lines.extend(b_lines))
-        if self._lines_do_rhyme(b_lines): return False 
-
+        a_lines.extend(b_lines)
+        # print "combined lines: ", a_lines
+        if self._lines_do_rhyme(a_lines): return False 
+        print "DEBUG POINT 8"
         # All constraints have been addressed; assume the text is a limerick
-        return True
+        print "Returning: ", True
+        return True 
 
 
-        # TODO: provide an implementation!
-        return False
     # TODO: if implementing guess_syllables add that function here by uncommenting the stub code and
     # completing the function. If you want guess_syllables to be used by num_syllables, feel free to integrate it appropriately.
     #
