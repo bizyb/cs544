@@ -14,6 +14,7 @@ import tempfile
 import shutil
 import atexit
 import re
+import random
 # Use word_tokenize to split raw text into words
 from string import punctuation
 
@@ -124,6 +125,54 @@ class LimerickDetector:
                 return True
         return False
 
+    def _get_lines(self, text):
+      """
+      Split the text into A lines and B lines and return the resulting lists as tuple.
+      """
+      lines = text.split('\n')
+      a_lines = []
+      b_lines = []
+      for index, line in enumerate(lines):
+        if index in [0, 1, 3]:
+          a_lines.append(line)
+        else:
+          b_lines.append(line)
+      return a_lines, b_lines
+
+    def _is_valid_diff(self, a_num_syllables, b_num_syllables):
+      """
+      Return True if the inter-line syllable count difference conforms to the 
+      assignment specification. Return False otherwise.
+      """
+      # The syllable count difference between the B lines must not be greater than 2
+      if abs(b_num_syllables[0] - b_num_syllables[1]) > 2: return False 
+
+      # The syllable count difference between any of the A lines must not be greater
+      # than 2
+      for i in range(len(a_num_syllables)):
+        for j in range(len(a_num_syllables)):
+          if abs(a_num_syllables[i] - a_num_syllables[j]) > 2: return False
+
+      # Each of the B lines should have fewer syllables than the A lines
+      for i in range(len(a_num_syllables)):
+        for j in range(len(b_num_syllables)):
+           if a_num_syllables[i] - b_num_syllables[j] <= 0: return False
+      
+
+     def _lines_do_rhyme(self, lines):
+       """
+       Return True if all the lines rhyme with each other. Return False otherwise.
+       """
+        do_rhyme = True
+        for i in range(len(lines)):
+          for j in range(len(lines)):
+            i_terminal_word = word_tokenize(lines[i])[-1]
+            j_terminal_word = word_tokenize(lines[j])[-1]
+            do_rhyme = do_rhyme and self.rhyme(i_terminal_word, j_terminal_word)
+        return do_rhyme
+
+
+
     def is_limerick(self, text):
         """
         Takes text where lines are separated by newline characters.  Returns
@@ -135,16 +184,41 @@ class LimerickDetector:
 
 
         Additionally, the following syllable constraints should be observed:
-          * No two A lines should differ in their number of syllables by more than two.
-          * The B lines should differ in their number of syllables by no more than two.
-          * Each of the B lines should have fewer syllables than each of the A lines.
-          * No line should have fewer than 4 syllables
+          ✓ * No two A lines should differ in their number of syllables by more than two.
+          ✓ * The B lines should differ in their number of syllables by no more than two.
+          ✓ * Each of the B lines should have fewer syllables than each of the A lines.
+          ✓ * No line should have fewer than 4 syllables
 
         (English professors may disagree with this definition, but that's what
         we're using here.)
-
-
         """
+        # Check if the text should be considered as a limerick to begin with
+        a_lines, b_lines = self._get_lines(text)
+        if (len(a_lines) + len(b_lines) > 5): return False
+        if (len(a_lines) != 3 and len(b_lines) != 2): return False
+
+        # check line-level syllable count
+        a_num_syllables = [self.num_syllables(word) for word in a_lines]
+        b_num_syllables = [self.num_syllables(word) for word in b_lines]
+        if sum(a_num_syllables) < 4 or sum(b_num_syllables) < 4: return False
+
+        # check inter-line level syllable count difference
+        if not self._is_valid_diff(a_num_syllables, b_num_syllables): return False
+
+        # All A lines must rhyme with each other
+        if not self._lines_do_rhyme(a_lines): return False 
+
+        # All B lines must rhyme with each other
+        if not self._lines_do_rhyme(b_lines): return False 
+
+        # A lines and B lines must not rhyme with each other 
+        random.shuffle(a_lines.extend(b_lines))
+        if self._lines_do_rhyme(b_lines): return False 
+
+        # All constraints have been addressed; assume the text is a limerick
+        return True
+
+
         # TODO: provide an implementation!
         return False
     # TODO: if implementing guess_syllables add that function here by uncommenting the stub code and
