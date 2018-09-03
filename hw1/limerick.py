@@ -81,14 +81,34 @@ class LimerickDetector:
           count = 0
         return min(count_list)
 
+    def _get_suffix_list(self, word):
+      """
+      Return the suffix set for word after removing the initial consonant sound from each 
+      pronounciation, where applicable. If initial sounds is a vowel sound, do not modify the 
+      pronounciation list.
+      """
+      pron_list = self._pronunciations.get(word)
+      suffix_list = []
+      if pron_list:
+        for pron in pron_list:
+          if not re.findall("\d+", pron[0]):
+            suffix_list.append(pron[1:])
+          else:
+            suffix_list.append(pron)
+      return suffix_list
+
     def rhymes(self, a, b):
         """
         Returns True if two words (represented as lower-case strings) rhyme,
         False otherwise.
         """
-
-        # TODO: provide an implementation!
-
+        a_suffix_list = self._get_suffix_list(a.lower())
+        # b_suffix_list = self.__get_suffix_list(b.lower())
+        # for a_suffix in a_suffix_list:
+        #   for b_suffix in b_suffix_list:
+        #     if self.__is_suffix(a_suffix, b_suffix):
+        #       if self.__do_rhyme(a_suffix, b_suffix):
+        #         return True
         return False
 
     def is_limerick(self, text):
