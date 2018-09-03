@@ -96,6 +96,20 @@ class LimerickDetector:
           else:
             suffix_list.append(pron)
       return suffix_list
+    
+    def _is_suffix(self, suffix_a, suffix_b):
+      """
+      Return True if either suffix_a is a suffix of suffix_b, vice versa, or the two 
+      suffixes are the same. Return False otherwise.
+      """
+      is_suffix = False
+      if len(suffix_a) == 0 or len(suffix_b) == 0: is_suffix = False
+      elif suffix_a == suffix_b: is_suffix = True
+      elif len(suffix_a) > len(suffix_b):
+        is_suffix = suffix_b == suffix_a[len(suffix_a) - len(suffix_b):]
+      else:
+        is_suffix = suffix_a == suffix_b[len(suffix_b) - len(suffix_a):]
+      return is_suffix
 
     def rhymes(self, a, b):
         """
@@ -103,12 +117,11 @@ class LimerickDetector:
         False otherwise.
         """
         a_suffix_list = self._get_suffix_list(a.lower())
-        # b_suffix_list = self.__get_suffix_list(b.lower())
-        # for a_suffix in a_suffix_list:
-        #   for b_suffix in b_suffix_list:
-        #     if self.__is_suffix(a_suffix, b_suffix):
-        #       if self.__do_rhyme(a_suffix, b_suffix):
-        #         return True
+        b_suffix_list = self._get_suffix_list(b.lower())
+        for suffix_a in a_suffix_list:
+          for suffix_b in b_suffix_list:
+            if self._is_suffix(suffix_a, suffix_b):
+                return True
         return False
 
     def is_limerick(self, text):
