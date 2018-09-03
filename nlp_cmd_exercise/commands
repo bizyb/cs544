@@ -1,0 +1,74 @@
+# type "man <cmdname>" on the command line to learn more about a command. e.g. "man sort" (man = manual)
+# to learn how to use each command I suggest trying them out!
+
+# word counts and ngram counts
+
+# 10 most frequent words in the text
+sed 's/ /\n/g' sawyr11.txt | sort | uniq -c | sort -k1nr | head
+# 10 most frequent words in the text after removing blank lines
+sed 's/ /\n/g' sawyr11.txt | grep -v "^$" | sort | uniq -c | sort -k1nr | head
+# 10 most frequent bigrams (2 word sequences) in the text
+
+sed 's/ /\n/g' sawyr11.txt | grep -v "^$" > ts.words
+tail -n+2 ts.words > ts.2pos
+paste ts.words ts.2pos | sort | uniq -c | sort -k1nr | head
+# count number of words/ngrams, number of word/ngram types, number of 1-count word/ngram types
+
+# words in the text without blank lines, one word per line, saved to a file (for convenience)
+sed 's/ /\n/g' sawyr11.txt | grep -v "^$" > ts.words
+# number of word tokens
+wc -l ts.words
+# number of word types
+sort ts.words | uniq | wc -l
+# number of one-count words
+sort ts.words | uniq -c | awk '$1==1{print}' | wc -l
+# number of two-word sequence (bigram) tokens
+# (based on the answer to the number of word tokens you should know this without running the command...
+paste ts.words <(tail -n+2 ts.words) | wc -l
+# number of bigram types
+paste ts.words <(tail -n+2 ts.words) | sort | uniq | wc -l
+# number of one-count bigrams
+paste ts.words <(tail -n+2 ts.words) | sort | uniq -c | awk '$1==1{print}' | wc -l
+
+# prepare review data (with fix)
+# extract data from xml-ish format. note the command "expand" which I use to remove tabs
+# note the use of "for" loops
+for i in positive negative; do ./extract.py -i $i.review | expand -t 1 > $i.rev.txt; done
+# tag data with labels
+# introduce process substitution
+yes "pos" | head -2198 > pos.labels
+paste pos.txt pos.labels > pos.tagged
+# OR
+paste positive.rev.txt <(yes "pos" | head -2198) > pos.tagged
+paste negative.rev.txt <(yes "neg" | head -2116) > neg.tagged
+# shuffle tagged data
+cat pos.tagged neg.tagged | shuf > all
+# divide into dev, test, train sets
+head -800 all > devtest
+tail -n+801 all > train
+head -400 devtest > dev
+tail -400 devtest > test
+# separate text from labels in train, dev, and test sets
+for i in train dev test; do cut -f1 $i > $i.txt; cut -f2 $i > $i.label; done
+
+# random baseline on dev and simple scorer
+# prepare 50/50 randomly arranged 'predictions' for dev set
+for i in pos neg; do yes "$i" | head -200; done | shuf > dev.random.pred
+# score random predictions
+paste dev.random.pred dev.label | awk '$1==$2{a+=1.0}END{print a/NR}'
+
+# learn how to run basic classifier (I forgot how to run it)
+./simplesent.py -h
+# run basic classifier
+./simplesent.py -i dev.txt -p positive.txt -n negative.txt -o dev.ss.pred
+# score basic classifier predictions
+paste dev.ss.pred dev.label | awk '$1==$2{a+=1.0}END{print a/NR}'
+
+
+
+# Advanced
+
+# tricky way to do 10 most frequent bigrams:
+# 10 most frequent bigrams (2 word sequences) in the text
+paste <(sed 's/ /\n/g' sawyr11.txt | grep -v "^$") <(sed 's/ /\n/g' sawyr11.txt | grep -v "^$" | tail -n+2) | sort | uniq -c | sort -k1nr | head
+
