@@ -214,22 +214,20 @@ class LimerickDetector:
         a_num_syllables = [self._line_num_syllables(line) for line in a_lines]
         b_num_syllables = [self._line_num_syllables(line) for line in b_lines]
         if sum(a_num_syllables) < 4 or sum(b_num_syllables) < 4: return False
-        print "a_num_syllables: ", a_lines, a_num_syllables
-        print "b_num_syllables: ", b_lines, b_num_syllables
-        print "point 1"
+       
         # check inter-line level syllable count difference
         if not self._is_valid_diff(a_num_syllables, b_num_syllables): return False
-        print "point 2"
+        
         # All A lines must rhyme with each other
         if not self._lines_do_rhyme(a_lines): return False 
-        print "point 3"
+        
         # All B lines must rhyme with each other
         if not self._lines_do_rhyme(b_lines): return False 
-        print "point 4"
+       
         # A lines and B lines must not rhyme with each other 
         a_lines.extend(b_lines)
         if self._lines_do_rhyme(a_lines): return False 
-        print "point 5 -- home run!!"
+        
         # All constraints have been addressed; assume the text is a limerick
         return True 
 
