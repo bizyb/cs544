@@ -66,7 +66,6 @@ class LimerickDetector:
         pronunciation, take the shorter one.  If there is no entry in the
         dictionary, return 1.
         """
-
         pron_list = self._pronunciations.get(word)
         if not pron_list:
           return 1
@@ -128,10 +127,11 @@ class LimerickDetector:
       Split the text into A lines and B lines and return the resulting lists as tuple.
       """
       lines = text.split('\n')
-      lines = [line for line in lines if line.strip()] # ignore any empty lines
+      lines = [line.lower() for line in lines if line.strip()] # ignore any empty lines
       a_lines = []
       b_lines = []
       for index, line in enumerate(lines):
+        line = " ".join([l for l in line.split(" ") if l]) # Remove any flanking spaces
         if index in [0, 1, 4]:
           a_lines.append(line)
         else:
@@ -214,20 +214,22 @@ class LimerickDetector:
         a_num_syllables = [self._line_num_syllables(line) for line in a_lines]
         b_num_syllables = [self._line_num_syllables(line) for line in b_lines]
         if sum(a_num_syllables) < 4 or sum(b_num_syllables) < 4: return False
-
+        print "a_num_syllables: ", a_lines, a_num_syllables
+        print "b_num_syllables: ", b_lines, b_num_syllables
+        print "point 1"
         # check inter-line level syllable count difference
         if not self._is_valid_diff(a_num_syllables, b_num_syllables): return False
-  
+        print "point 2"
         # All A lines must rhyme with each other
         if not self._lines_do_rhyme(a_lines): return False 
-        
+        print "point 3"
         # All B lines must rhyme with each other
         if not self._lines_do_rhyme(b_lines): return False 
-       
+        print "point 4"
         # A lines and B lines must not rhyme with each other 
         a_lines.extend(b_lines)
         if self._lines_do_rhyme(a_lines): return False 
-        
+        print "point 5 -- home run!!"
         # All constraints have been addressed; assume the text is a limerick
         return True 
 
@@ -245,16 +247,18 @@ class LimerickDetector:
     # TODO: if composing your own limerick, put it here and uncomment this function. is_limerick(my_limerick()) should be True
     #
     #
-    # def my_limerick(self):
-    #   """
-    #   A limerick I wrote about computational linguistics
-    #   """
-    #   limerick="""
-    #     Replace these words
-    #     with your limerick
-    #     and then test it out
-    #   """
-    #   return limerick
+    def my_limerick(self):
+      """
+      A limerick I wrote about computational linguistics
+      """
+      limerick="""
+          Computational linguistics rocks
+          It seldom fails to knock off my socks
+          Untold are the powers it wields
+          Accurate are its yields
+          Now no longer is it a black box
+      """
+      return limerick
 
 
 # The code below should not need to be modified
