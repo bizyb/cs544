@@ -259,7 +259,7 @@ class LimerickDetector:
       Return True if the input word has a silent vowel at the end. Usually this means 
       the letter e at the end. 
       """
-      return word[-1] == "e"
+      return word[-1] == "e" or word[-2:] == "es"
     
     def _dipthong_count(self, word):
       """
@@ -302,7 +302,12 @@ class LimerickDetector:
       if dipthong_count > 0: vowel_count -= dipthong_count
 
       # does it have any middle double consonants?
-      if self._has_mid_double_const(word): vowel_count += 1
+      # TODO: don't use this function; can't be combined with vowel counts 
+      # done earlier
+      # if self._has_mid_double_const(word): vowel_count += 1
+
+      # does it have a y at the end?
+      if word[-1] == "y": vowel_count += 1
 
       return vowel_count
 
