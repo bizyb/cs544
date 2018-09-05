@@ -242,19 +242,71 @@ class LimerickDetector:
         return True 
 
 
-    # TODO: if implementing guess_syllables add that function here by uncommenting the stub code and
-    # completing the function. If you want guess_syllables to be used by num_syllables, feel free to integrate it appropriately.
-    #
-    # def guess_syllables(self, word):
-    #   """
-    #   Guesses the number of syllables in a word. Extra credit function.
-    #   """
-    #   # TODO: provide an implementation!
-    #   pass
+    
+    def _get_vowel_count(self, word):
+      """
+      Return the number of vowels found in the input word.
+      """
+      vowels = ['a', 'e', 'i', 'o', 'u']
+      count = 0
+      for i in range(len(word)):
+        if word[i] in vowels:
+          count += 1
+      return count 
+    
+    def _has_silent_vowel(self, word):
+      """
+      Return True if the input word has a silent vowel at the end. Usually this means 
+      the letter e at the end. 
+      """
+      return word[-1] == "e"
+    
+    def _dipthong_count(self, word):
+      """
+      Return the number of dipthongs in the input word. A dipthong is a pair of
+      vowels making up one sound.
+      """
+      # common dipthongs; obviously, there are more
+      dipthongs = list(set(["au", "oi", "ou", "ai", "ei", "oa", "oe", "io" "ea", 
+                            "eu", "aa", "ee", "oo"]))
+      count = 0
+      for d in dipthongs:
+        if d in word: count += 1
+      return count
+    
+    def _has_mid_double_const(self, word):
+      """
+      Return True if the input word has double consonants in the middle. For 
+      the sake of simplicity, truncate the first and last characters and check
+      if the double consonant exists in the remaining substring.
+      """
+      substring = word[1:-1]
+      corpus = "bcdfghjklmnpqrstvwxyz"
+      for c in corpus:
+        double = c + c 
+        if double in word: return True 
+      return False
 
-    # TODO: if composing your own limerick, put it here and uncomment this function. is_limerick(my_limerick()) should be True
-    #
-    #
+    def guess_syllables(self, word):
+      """
+      Guesses the number of syllables in a word. Extra credit function.
+      """
+      word = word.lower()
+      vowel_count = self._get_vowel_count(word)
+      
+      # does it have a silent vowel at the end?
+      if self._has_silent_vowel(word): vowel_count -= 1
+
+      # does it have a dipthong/s?
+      dipthong_count = self._dipthong_count(word)
+      if dipthong_count > 0: vowel_count -= dipthong_count
+
+      # does it have any middle double consonants?
+      if self._has_mid_double_const(word): vowel_count += 1
+
+      return vowel_count
+
+   
     def my_limerick(self):
       """
       A limerick I wrote about computational linguistics
