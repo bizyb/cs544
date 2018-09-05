@@ -89,10 +89,17 @@ class LimerickDetector:
       suffix_list = []
       if pron_list:
         for pron in pron_list:
-          if not re.findall("\d+", pron[0]):
-            suffix_list.append(pron[1:])
-          else:
-            suffix_list.append(pron)
+          # Keep looping until we find the first instance of a non-consonant sound
+          # E.g. pron = [u'S', u'L', u'AY1', u'T', u'IH0', u'D']
+          # E.g. should return [u'AY1', u'T', u'IH0', u'D']
+          i = 0
+          while (i < len(pron)):
+            if re.findall("\d+", pron[i]):
+              suffix_list.append(pron[i:])
+              break
+            i += 1
+          # else:
+          #   suffix_list.append(pron)
       return suffix_list
     
     def _is_suffix(self, suffix_a, suffix_b):
@@ -165,12 +172,15 @@ class LimerickDetector:
       """
       Return True if all the lines rhyme with each other. Return False otherwise.
       """
-      do_rhyme = True
+      count = 0
+      do_rhyme = False
       for i in range(len(lines)):
         for j in range(len(lines)):
           i_terminal_word = word_tokenize(lines[i])[-1]
           j_terminal_word = word_tokenize(lines[j])[-1]
-          do_rhyme = do_rhyme and self.rhymes(i_terminal_word, j_terminal_word)
+          do_rhyme = self.rhymes(i_terminal_word, j_terminal_word)
+        if do_rhyme: count += 1
+      do_rhyme = True if count >= 2 else False
       return do_rhyme
     
     def _line_num_syllables(self, line):
@@ -223,11 +233,11 @@ class LimerickDetector:
         
         # All B lines must rhyme with each other
         if not self._lines_do_rhyme(b_lines): return False 
-       
-        # A lines and B lines must not rhyme with each other 
-        a_lines.extend(b_lines)
-        if self._lines_do_rhyme(a_lines): return False 
         
+        # A lines and B lines must not rhyme with each other 
+        combined = [a_lines[0], b_lines[0]]
+        if self._lines_do_rhyme(combined): return False 
+       
         # All constraints have been addressed; assume the text is a limerick
         return True 
 
